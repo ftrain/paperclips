@@ -514,9 +514,12 @@ export function parseGameDefinition(data: unknown): ValidatedGameDefinition {
  * Format validation errors for display
  */
 export function formatValidationErrors(errors: z.ZodError): string[] {
+  if (!errors || !errors.errors) {
+    return ['Unknown validation error'];
+  }
   return errors.errors.map(err => {
     const path = err.path.join('.');
-    return `${path}: ${err.message}`;
+    return path ? `${path}: ${err.message}` : err.message;
   });
 }
 
