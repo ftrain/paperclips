@@ -18,10 +18,12 @@ import type {
   EvaluationContext,
   GameMessage,
   Action,
+  PendingAction,
+  SpawnedEntity,
 } from '../types/game';
 
 import { evaluateCondition, getStateValue, setStateValue } from './evaluator';
-import { executeAction, applyCosts, canAfford } from './actions';
+import { executeAction, applyCosts, canAfford, AnimateOptions, SoundOptions } from './actions';
 
 export interface GameEngineEvents {
   onStateChange?: (state: GameState) => void;
@@ -29,6 +31,10 @@ export interface GameEngineEvents {
   onPhaseChange?: (phase: string | null) => void;
   onProjectsChange?: (available: string[]) => void;
   onTick?: (tick: number) => void;
+  onEmit?: (event: string, data?: Record<string, unknown>) => void;
+  onSpawn?: (entity: SpawnedEntity) => void;
+  onAnimate?: (target: string, animation: string, duration?: number, options?: AnimateOptions) => void;
+  onSound?: (sound: string, options: SoundOptions) => void;
 }
 
 export class GameEngine {
@@ -53,6 +59,8 @@ export class GameEngine {
       activeProjects: [],
       completedProjects: {},
       ruleFires: {},
+      pendingActions: [],
+      entities: [],
     };
   }
 
@@ -117,6 +125,9 @@ export class GameEngine {
     this.lastTickTime = now;
     this.runtime.tick++;
 
+    // Process pending delayed actions
+    this.processPendingActions();
+
     // Fire tick rules
     this.fireRulesByTiming('tick');
 
@@ -140,6 +151,29 @@ export class GameEngine {
 
     // Emit tick event
     this.events.onTick?.(this.runtime.tick);
+  }
+
+  /**
+   * Process any pending delayed actions that are ready
+   */
+  private processPendingActions(): void {
+    const readyActions: PendingAction[] = [];
+    const remainingActions: PendingAction[] = [];
+
+    for (const pending of this.runtime.pendingActions) {
+      if (pending.executeTick <= this.runtime.tick) {
+        readyActions.push(pending);
+      } else {
+        remainingActions.push(pending);
+      }
+    }
+
+    this.runtime.pendingActions = remainingActions;
+
+    // Execute ready actions
+    for (const pending of readyActions) {
+      this.executeActions(pending.actions);
+    }
   }
 
   /**
@@ -210,7 +244,14 @@ export class GameEngine {
     executeAction(actions, ctx, {
       onMessage: (msg) => this.addMessage(msg),
       onEvent: (eventId) => this.handleEvent(eventId),
+      onEmit: (event, data) => this.handleEmit(event, data),
+      onSpawn: (entity) => this.handleSpawn(entity),
+      onAnimate: (target, animation, duration, options) =>
+        this.events.onAnimate?.(target, animation, duration, options),
+      onSound: (sound, options) => this.events.onSound?.(sound, options),
+      onDelay: (pending) => this.runtime.pendingActions.push(pending),
       functions: this.definition.functions,
+      currentTick: this.runtime.tick,
     });
 
     // Notify state change
@@ -239,6 +280,58 @@ export class GameEngine {
     // Fire rules that listen to this event
     // For now, just log it
     console.log('Event triggered:', eventId);
+  }
+
+  /**
+   * Handle an emitted custom event
+   */
+  private handleEmit(event: string, data?: Record<string, unknown>): void {
+    this.events.onEmit?.(event, data);
+  }
+
+  /**
+   * Handle entity spawn
+   */
+  private handleSpawn(entity: SpawnedEntity): void {
+    this.runtime.entities.push(entity);
+    this.events.onSpawn?.(entity);
+  }
+
+  /**
+   * Get all spawned entities
+   */
+  getEntities(): SpawnedEntity[] {
+    return this.runtime.entities;
+  }
+
+  /**
+   * Get entities by type
+   */
+  getEntitiesByType(type: string): SpawnedEntity[] {
+    return this.runtime.entities.filter(e => e.type === type);
+  }
+
+  /**
+   * Remove an entity by ID
+   */
+  removeEntity(id: string): boolean {
+    const index = this.runtime.entities.findIndex(e => e.id === id);
+    if (index >= 0) {
+      this.runtime.entities.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Clear all entities of a type
+   */
+  clearEntities(type?: string): void {
+    if (type) {
+      this.runtime.entities = this.runtime.entities.filter(e => e.type !== type);
+    } else {
+      this.runtime.entities = [];
+    }
   }
 
   /**
@@ -472,6 +565,8 @@ export class GameEngine {
       activeProjects: [],
       completedProjects: {},
       ruleFires: {},
+      pendingActions: [],
+      entities: [],
     };
 
     this.fireRulesByTiming('init');

@@ -122,11 +122,87 @@ const MessageActionSchema = z.object({
   action: z.literal('message'),
   text: z.string(),
   type: z.enum(['info', 'success', 'warning', 'error']).optional(),
+  icon: z.string().optional(),
 });
 
 const TriggerActionSchema = z.object({
   action: z.literal('trigger'),
   event: z.string(),
+});
+
+const DelayActionSchema = z.object({
+  action: z.literal('delay'),
+  ticks: ExpressionSchema,
+  actions: z.lazy(() => z.array(ActionSchema)),
+});
+
+const RepeatActionSchema = z.object({
+  action: z.literal('repeat'),
+  count: ExpressionSchema,
+  actions: z.lazy(() => z.array(ActionSchema)),
+  indexVar: z.string().optional(),
+});
+
+const RandomChoiceSchema = z.object({
+  weight: ExpressionSchema.optional(),
+  actions: z.lazy(() => z.array(ActionSchema)),
+});
+
+const RandomActionSchema = z.object({
+  action: z.literal('random'),
+  choices: z.array(RandomChoiceSchema),
+});
+
+const LoopActionSchema = z.object({
+  action: z.literal('loop'),
+  while: ConditionSchema,
+  actions: z.lazy(() => z.array(ActionSchema)),
+  maxIterations: z.number().int().positive().optional(),
+});
+
+const ForEachActionSchema = z.object({
+  action: z.literal('forEach'),
+  from: ExpressionSchema,
+  to: ExpressionSchema,
+  step: ExpressionSchema.optional(),
+  indexVar: z.string(),
+  actions: z.lazy(() => z.array(ActionSchema)),
+});
+
+const SpawnActionSchema = z.object({
+  action: z.literal('spawn'),
+  type: z.string(),
+  count: ExpressionSchema.optional(),
+  properties: z.record(z.string(), ExpressionSchema).optional(),
+});
+
+const EmitActionSchema = z.object({
+  action: z.literal('emit'),
+  event: z.string(),
+  data: z.record(z.string(), ExpressionSchema).optional(),
+});
+
+const AnimateActionSchema = z.object({
+  action: z.literal('animate'),
+  target: z.string(),
+  animation: z.string(),
+  duration: ExpressionSchema.optional(),
+  options: z.object({
+    delay: ExpressionSchema.optional(),
+    iterations: ExpressionSchema.optional(),
+    direction: z.enum(['normal', 'reverse', 'alternate', 'alternate-reverse']).optional(),
+    fill: z.enum(['none', 'forwards', 'backwards', 'both']).optional(),
+  }).optional(),
+});
+
+const SoundActionSchema = z.object({
+  action: z.literal('sound'),
+  sound: z.string(),
+  volume: ExpressionSchema.optional(),
+  loop: z.boolean().optional(),
+  channel: z.string().optional(),
+  fadeIn: ExpressionSchema.optional(),
+  fadeOut: ExpressionSchema.optional(),
 });
 
 const ActionSchema: z.ZodType<Action> = z.lazy(() =>
@@ -137,6 +213,15 @@ const ActionSchema: z.ZodType<Action> = z.lazy(() =>
     ToggleActionSchema,
     MessageActionSchema,
     TriggerActionSchema,
+    DelayActionSchema,
+    RepeatActionSchema,
+    RandomActionSchema,
+    LoopActionSchema,
+    ForEachActionSchema,
+    SpawnActionSchema,
+    EmitActionSchema,
+    AnimateActionSchema,
+    SoundActionSchema,
     z.object({
       action: z.literal('if'),
       condition: ConditionSchema,
@@ -161,6 +246,15 @@ type Action = z.infer<typeof SetActionSchema>
   | z.infer<typeof ToggleActionSchema>
   | z.infer<typeof MessageActionSchema>
   | z.infer<typeof TriggerActionSchema>
+  | z.infer<typeof DelayActionSchema>
+  | z.infer<typeof RepeatActionSchema>
+  | z.infer<typeof RandomActionSchema>
+  | z.infer<typeof LoopActionSchema>
+  | z.infer<typeof ForEachActionSchema>
+  | z.infer<typeof SpawnActionSchema>
+  | z.infer<typeof EmitActionSchema>
+  | z.infer<typeof AnimateActionSchema>
+  | z.infer<typeof SoundActionSchema>
   | { action: 'if'; condition: Condition; then: Action[]; else?: Action[] }
   | { action: 'sequence'; actions: Action[] }
   | { action: 'call'; function: string; args?: Record<string, Expression> };
@@ -240,6 +334,7 @@ export const ProjectSchema = z.object({
   name: z.string().min(1, 'Project must have a name'),
   description: z.string(),
   priceTag: z.string().optional(),
+  icon: z.string().optional(),
   trigger: ConditionSchema,
   costs: z.array(CostSchema),
   repeatable: z.boolean().optional(),
@@ -256,7 +351,7 @@ export const ProjectSchema = z.object({
 
 export const UIBindingSchema = z.object({
   elementId: z.string(),
-  type: z.enum(['text', 'display', 'button', 'progress', 'visibility', 'class', 'style']),
+  type: z.enum(['text', 'display', 'button', 'progress', 'visibility', 'class', 'style', 'icon']),
   value: ExpressionSchema.optional(),
   format: z.enum(['number', 'currency', 'percentage', 'scientific', 'compact', 'time']).optional(),
   precision: z.number().int().min(0).optional(),
@@ -265,16 +360,20 @@ export const UIBindingSchema = z.object({
   visible: ConditionSchema.optional(),
   onClick: z.string().optional(),
   enabled: ConditionSchema.optional(),
+  icon: z.string().optional(),
   current: ExpressionSchema.optional(),
   max: ExpressionSchema.optional(),
   class: z.string().optional(),
   condition: ConditionSchema.optional(),
   style: z.record(z.string(), z.union([ExpressionSchema, z.string()])).optional(),
+  iconValue: ExpressionSchema.optional(),
+  iconMap: z.record(z.string(), z.string()).optional(),
 });
 
 export const UISectionSchema = z.object({
   id: z.string(),
   name: z.string().optional(),
+  icon: z.string().optional(),
   visible: ConditionSchema.optional(),
   bindings: z.array(UIBindingSchema),
 });
@@ -293,6 +392,17 @@ export const BattleConfigSchema = z.object({
   leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be hex color'),
   rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be hex color'),
   explodeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be hex color'),
+});
+
+// ============================================================================
+// ICON DEFINITION SCHEMA
+// ============================================================================
+
+export const IconDefinitionSchema = z.object({
+  type: z.enum(['svg', 'image', 'emoji', 'fonticon']),
+  value: z.string(),
+  color: z.string().optional(),
+  size: z.number().positive().optional(),
 });
 
 // ============================================================================
@@ -354,6 +464,7 @@ export const GameDefinitionSchema = z.object({
   assets: z.object({
     css: z.array(z.string()).optional(),
     images: z.record(z.string(), z.string()).optional(),
+    icons: z.record(z.string(), IconDefinitionSchema).optional(),
     audio: z.record(z.string(), z.string()).optional(),
   }).optional(),
 });

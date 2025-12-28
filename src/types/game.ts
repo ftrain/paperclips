@@ -76,7 +76,16 @@ export type Action =
   | TriggerEventAction
   | ConditionalAction
   | SequenceAction
-  | CallAction;
+  | CallAction
+  | DelayAction
+  | RepeatAction
+  | RandomAction
+  | LoopAction
+  | ForEachAction
+  | SpawnAction
+  | EmitAction
+  | AnimateAction
+  | SoundAction;
 
 export interface SetAction {
   action: 'set';
@@ -105,6 +114,7 @@ export interface MessageAction {
   action: 'message';
   text: string;
   type?: 'info' | 'success' | 'warning' | 'error';
+  icon?: string;  // Icon asset ID or emoji
 }
 
 export interface TriggerEventAction {
@@ -128,6 +138,88 @@ export interface CallAction {
   action: 'call';
   function: string;  // Reference to a reusable action sequence
   args?: Record<string, Expression>;
+}
+
+/** Execute actions after a delay (in ticks) */
+export interface DelayAction {
+  action: 'delay';
+  ticks: Expression;  // Number of ticks to wait
+  actions: Action[];  // Actions to execute after delay
+}
+
+/** Execute actions multiple times */
+export interface RepeatAction {
+  action: 'repeat';
+  count: Expression;  // Number of repetitions
+  actions: Action[];
+  indexVar?: string;  // Optional variable name to store current iteration index
+}
+
+/** Pick and execute one action randomly from a list */
+export interface RandomAction {
+  action: 'random';
+  choices: {
+    weight?: Expression;  // Relative weight (default 1)
+    actions: Action[];
+  }[];
+}
+
+/** Execute actions while condition is true (with safety limit) */
+export interface LoopAction {
+  action: 'loop';
+  while: Condition;
+  actions: Action[];
+  maxIterations?: number;  // Safety limit, default 1000
+}
+
+/** Iterate over a range and execute actions for each value */
+export interface ForEachAction {
+  action: 'forEach';
+  from: Expression;  // Start value (inclusive)
+  to: Expression;    // End value (exclusive)
+  step?: Expression; // Increment (default 1)
+  indexVar: string;  // Variable name to store current value
+  actions: Action[];
+}
+
+/** Spawn a game object (entity, particle, etc.) */
+export interface SpawnAction {
+  action: 'spawn';
+  type: string;  // Entity type to spawn
+  count?: Expression;  // Number to spawn (default 1)
+  properties?: Record<string, Expression>;  // Initial properties
+}
+
+/** Emit a custom event with optional data */
+export interface EmitAction {
+  action: 'emit';
+  event: string;
+  data?: Record<string, Expression>;
+}
+
+/** Trigger a UI animation */
+export interface AnimateAction {
+  action: 'animate';
+  target: string;  // Element ID or selector
+  animation: string;  // Animation name (CSS class or keyframe name)
+  duration?: Expression;  // Duration in ms
+  options?: {
+    delay?: Expression;
+    iterations?: Expression;
+    direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
+    fill?: 'none' | 'forwards' | 'backwards' | 'both';
+  };
+}
+
+/** Play a sound effect or music */
+export interface SoundAction {
+  action: 'sound';
+  sound: string;  // Sound asset ID
+  volume?: Expression;  // 0-1 (default 1)
+  loop?: boolean;
+  channel?: string;  // Audio channel for managing playback
+  fadeIn?: Expression;  // Fade in duration in ms
+  fadeOut?: Expression;  // Fade out duration in ms
 }
 
 // ============================================================================
@@ -181,6 +273,7 @@ export interface ProjectDefinition {
   name: string;
   description: string;
   priceTag?: string;  // Display text for cost
+  icon?: string;  // Icon asset ID or emoji
 
   trigger: Condition;  // When to show this project
   costs: CostDefinition[];
@@ -202,7 +295,7 @@ export interface ProjectDefinition {
 /** Definition of a UI element binding */
 export interface UIBinding {
   elementId: string;
-  type: 'text' | 'display' | 'button' | 'progress' | 'visibility' | 'class' | 'style';
+  type: 'text' | 'display' | 'button' | 'progress' | 'visibility' | 'class' | 'style' | 'icon';
 
   // For text/display
   value?: Expression;
@@ -217,6 +310,7 @@ export interface UIBinding {
   // For buttons
   onClick?: string;  // Action handler id
   enabled?: Condition;
+  icon?: string;  // Icon asset ID or emoji for buttons
 
   // For progress bars
   current?: Expression;
@@ -226,12 +320,17 @@ export interface UIBinding {
   class?: string;
   condition?: Condition;  // When to apply class/style
   style?: Record<string, Expression | string>;
+
+  // For icon type - dynamically select icon based on expression
+  iconValue?: Expression;  // Returns icon ID
+  iconMap?: Record<string, string>;  // Maps expression values to icon IDs
 }
 
 /** Definition of a UI section */
 export interface UISectionDefinition {
   id: string;
   name?: string;
+  icon?: string;  // Section icon
   visible?: Condition;
   bindings: UIBinding[];
 }
@@ -305,8 +404,17 @@ export interface GameDefinition {
   assets?: {
     css?: string[];
     images?: Record<string, string>;
+    icons?: Record<string, IconDefinition>;  // Icon assets
     audio?: Record<string, string>;
   };
+}
+
+/** Definition of an icon asset */
+export interface IconDefinition {
+  type: 'svg' | 'image' | 'emoji' | 'fonticon';
+  value: string;  // SVG path, image URL, emoji character, or icon class name
+  color?: string;  // Default color for SVG icons
+  size?: number;  // Default size in pixels
 }
 
 // ============================================================================
@@ -332,6 +440,22 @@ export interface GameMessage {
   text: string;
   type: 'info' | 'success' | 'warning' | 'error';
   timestamp: number;
+  icon?: string;  // Icon asset ID
+}
+
+/** A delayed action waiting to be executed */
+export interface PendingAction {
+  id: string;
+  executeTick: number;  // The tick at which to execute
+  actions: Action[];
+}
+
+/** A spawned game entity */
+export interface SpawnedEntity {
+  id: string;
+  type: string;
+  properties: Record<string, number | boolean | string>;
+  spawnTick: number;
 }
 
 /** Complete runtime state including derived data */
@@ -343,4 +467,6 @@ export interface RuntimeState {
   activeProjects: string[];
   completedProjects: Record<string, number>;  // id -> times completed
   ruleFires: Record<string, { count: number; lastTick: number }>;
+  pendingActions: PendingAction[];  // Delayed actions waiting to execute
+  entities: SpawnedEntity[];  // Spawned game objects
 }
