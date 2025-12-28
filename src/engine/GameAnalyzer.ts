@@ -1,6 +1,8 @@
 /**
  * GameAnalyzer - Graph-Based Game Analysis and Testing
  *
+ * Uses @dagrejs/graphlib for robust graph algorithms.
+ *
  * Treats the game as a directed graph where:
  * - Nodes = distinct game states (combinations of flags and resource thresholds)
  * - Edges = rules and projects that enable transitions between states
@@ -10,14 +12,15 @@
  * - Finding dead ends (states with no escape)
  * - Verifying reachability (can the player reach the end?)
  * - Reverse path testing (start from goal, walk backwards)
+ * - Topological sorting for dependency analysis
  */
 
+import { Graph, alg } from '@dagrejs/graphlib';
 import type {
   GameDefinition,
   RuleDefinition,
   ProjectDefinition,
   Condition,
-  StateVariableDefinition,
 } from '../types/game';
 
 /**
@@ -63,16 +66,38 @@ export interface GraphAnalysis {
   unreachable: string[];
   criticalPath: string[];
   milestones: StateNode[];
+  isAcyclic: boolean;
+  components: string[][];
+  topologicalOrder: string[] | null;
 }
 
 /**
- * Analyzes a game definition as a graph
+ * Analyzes a game definition as a graph using graphlib
  */
 export class GameAnalyzer {
   private definition: GameDefinition;
+  private graph: Graph;
 
   constructor(definition: GameDefinition) {
     this.definition = definition;
+    this.graph = new Graph({ directed: true, multigraph: true });
+  }
+
+  /**
+   * Build the graphlib graph from milestones and edges
+   */
+  private buildGraph(milestones: StateNode[], edges: StateEdge[]): void {
+    this.graph = new Graph({ directed: true, multigraph: true });
+
+    // Add nodes
+    for (const milestone of milestones) {
+      this.graph.setNode(milestone.id, milestone);
+    }
+
+    // Add edges
+    for (const edge of edges) {
+      this.graph.setEdge(edge.from, edge.to, edge, edge.id);
+    }
   }
 
   /**
@@ -205,7 +230,6 @@ export class GameAnalyzer {
     // Build edges from rules
     for (const rule of this.definition.rules) {
       const requirements = this.describeCondition(rule.condition);
-      const effects = this.analyzeRuleEffects(rule);
 
       // Find which milestones this rule connects
       for (const from of milestones) {
@@ -227,7 +251,6 @@ export class GameAnalyzer {
     // Build edges from projects
     for (const project of this.definition.projects) {
       const requirements = this.describeCondition(project.trigger);
-      const effects = this.analyzeProjectEffects(project);
 
       for (const from of milestones) {
         for (const to of milestones) {
@@ -252,17 +275,11 @@ export class GameAnalyzer {
    * Check if a rule connects two milestone states
    */
   private ruleConnects(rule: RuleDefinition, from: StateNode, to: StateNode): boolean {
-    // A rule connects from -> to if:
-    // 1. The rule's condition could be met in 'from' state
-    // 2. The rule's effects could produce 'to' state
-
-    // Simplified: check if rule sets flags that 'to' requires
     for (const action of rule.actions) {
       if (action.action === 'set' && action.target in to.flags) {
         return true;
       }
     }
-
     return false;
   }
 
@@ -270,50 +287,12 @@ export class GameAnalyzer {
    * Check if a project connects two milestone states
    */
   private projectConnects(project: ProjectDefinition, from: StateNode, to: StateNode): boolean {
-    // Similar to ruleConnects
     for (const effect of project.effects) {
       if (effect.action === 'set' && effect.target in to.flags) {
         return true;
       }
     }
-
     return false;
-  }
-
-  /**
-   * Analyze effects of a rule
-   */
-  private analyzeRuleEffects(rule: RuleDefinition): string[] {
-    const effects: string[] = [];
-
-    for (const action of rule.actions) {
-      if (action.action === 'set') {
-        effects.push(`sets ${action.target}`);
-      } else if (action.action === 'add') {
-        effects.push(`adds to ${action.target}`);
-      } else if (action.action === 'toggle') {
-        effects.push(`toggles ${action.target}`);
-      }
-    }
-
-    return effects;
-  }
-
-  /**
-   * Analyze effects of a project
-   */
-  private analyzeProjectEffects(project: ProjectDefinition): string[] {
-    const effects: string[] = [];
-
-    for (const effect of project.effects) {
-      if (effect.action === 'set') {
-        effects.push(`sets ${effect.target}`);
-      } else if (effect.action === 'add') {
-        effects.push(`adds to ${effect.target}`);
-      }
-    }
-
-    return effects;
   }
 
   /**
@@ -354,74 +333,50 @@ export class GameAnalyzer {
   }
 
   /**
-   * Detect cycles in the game graph using DFS
+   * Detect cycles using graphlib's findCycles algorithm
    */
   detectCycles(edges: StateEdge[]): GameCycle[] {
-    const cycles: GameCycle[] = [];
-    const graph = this.buildAdjacencyList(edges);
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-    const path: string[] = [];
+    const milestones = this.extractMilestones();
+    this.buildGraph(milestones, edges);
 
-    const dfs = (node: string) => {
-      visited.add(node);
-      recursionStack.add(node);
-      path.push(node);
+    // Use graphlib's cycle detection
+    const rawCycles = alg.findCycles(this.graph);
 
-      for (const neighbor of graph[node] || []) {
-        if (!visited.has(neighbor)) {
-          dfs(neighbor);
-        } else if (recursionStack.has(neighbor)) {
-          // Found a cycle
-          const cycleStart = path.indexOf(neighbor);
-          const cycleNodes = path.slice(cycleStart);
-
-          cycles.push({
-            nodes: cycleNodes,
-            edges: [], // Would need to track edges in path
-            type: this.classifyCycle(cycleNodes),
-            description: `Cycle: ${cycleNodes.join(' -> ')} -> ${neighbor}`,
-          });
-        }
-      }
-
-      path.pop();
-      recursionStack.delete(node);
-    };
-
-    for (const node of Object.keys(graph)) {
-      if (!visited.has(node)) {
-        dfs(node);
-      }
-    }
-
-    return cycles;
+    return rawCycles.map((cycleNodes, index) => ({
+      nodes: cycleNodes,
+      edges: this.findEdgesInCycle(cycleNodes, edges),
+      type: this.classifyCycle(cycleNodes),
+      description: `Cycle ${index + 1}: ${cycleNodes.join(' -> ')} -> ${cycleNodes[0]}`,
+    }));
   }
 
   /**
-   * Build adjacency list from edges
+   * Find edges that form a cycle
    */
-  private buildAdjacencyList(edges: StateEdge[]): Record<string, string[]> {
-    const graph: Record<string, string[]> = {};
+  private findEdgesInCycle(cycleNodes: string[], edges: StateEdge[]): string[] {
+    const cycleEdges: string[] = [];
+    const nodeSet = new Set(cycleNodes);
 
     for (const edge of edges) {
-      if (!graph[edge.from]) graph[edge.from] = [];
-      graph[edge.from].push(edge.to);
+      if (nodeSet.has(edge.from) && nodeSet.has(edge.to)) {
+        cycleEdges.push(edge.id);
+      }
     }
 
-    return graph;
+    return cycleEdges;
   }
 
   /**
    * Classify a cycle as productive, stagnant, or infinite
    */
   private classifyCycle(nodes: string[]): 'productive' | 'stagnant' | 'infinite' {
-    // Productive: cycle increases resources (e.g., clips -> funds -> upgrades -> more clips)
-    // Stagnant: cycle doesn't change anything significant
-    // Infinite: cycle could run forever without progressing
+    // Productive: cycle involves production or clippers (core game loop)
+    if (nodes.some(n => n.includes('production') || n.includes('clipper') || n.includes('auto'))) {
+      return 'productive';
+    }
 
-    // For now, simplified classification
-    if (nodes.some(n => n.includes('production') || n.includes('clipper'))) {
+    // Check if it's a main game flow cycle
+    if (nodes.some(n => n.includes('initial') || n.includes('unlock'))) {
       return 'productive';
     }
 
@@ -429,33 +384,34 @@ export class GameAnalyzer {
   }
 
   /**
-   * Find dead-end states (no outgoing edges)
+   * Find dead-end states using graphlib
    */
   findDeadEnds(milestones: StateNode[], edges: StateEdge[]): string[] {
-    const hasOutgoing = new Set(edges.map(e => e.from));
+    this.buildGraph(milestones, edges);
+
     return milestones
       .map(m => m.id)
-      .filter(id => !hasOutgoing.has(id) && !id.includes('final') && !id.includes('end'));
+      .filter(id => {
+        const successors = this.graph.successors(id);
+        const hasNoOutgoing = !successors || successors.length === 0;
+        const isNotFinal = !id.includes('final') && !id.includes('end');
+        return hasNoOutgoing && isNotFinal;
+      });
   }
 
   /**
-   * Find unreachable states (no incoming edges except from initial)
+   * Find unreachable states using graphlib's preorder DFS
    */
   findUnreachable(milestones: StateNode[], edges: StateEdge[]): string[] {
+    this.buildGraph(milestones, edges);
+
+    // Get all nodes reachable from 'initial' using preorder traversal
     const reachable = new Set<string>();
-    const graph = this.buildAdjacencyList(edges);
 
-    // BFS from initial state
-    const queue = ['initial'];
-    while (queue.length > 0) {
-      const node = queue.shift()!;
-      if (reachable.has(node)) continue;
-      reachable.add(node);
-
-      for (const neighbor of graph[node] || []) {
-        if (!reachable.has(neighbor)) {
-          queue.push(neighbor);
-        }
+    if (this.graph.hasNode('initial')) {
+      const preorderNodes = alg.preorder(this.graph, ['initial']);
+      for (const node of preorderNodes) {
+        reachable.add(node);
       }
     }
 
@@ -465,40 +421,66 @@ export class GameAnalyzer {
   }
 
   /**
-   * Find a critical path from initial to final state using BFS
+   * Find shortest path using Dijkstra's algorithm
+   */
+  findShortestPath(from: string, to: string): string[] {
+    const result = alg.dijkstra(this.graph, from);
+
+    if (!result[to] || result[to].distance === Infinity) {
+      return [];
+    }
+
+    // Reconstruct path
+    const path: string[] = [];
+    let current = to;
+
+    while (current !== from) {
+      path.unshift(current);
+      const predecessor = result[current].predecessor;
+      if (!predecessor) break;
+      current = predecessor;
+    }
+    path.unshift(from);
+
+    return path;
+  }
+
+  /**
+   * Find a critical path from initial to final state
    */
   findCriticalPath(milestones: StateNode[], edges: StateEdge[]): string[] {
-    const graph = this.buildAdjacencyList(edges);
-    const visited = new Set<string>();
-    const parent = new Map<string, string>();
-    const queue = ['initial'];
+    this.buildGraph(milestones, edges);
 
-    while (queue.length > 0) {
-      const node = queue.shift()!;
-      if (visited.has(node)) continue;
-      visited.add(node);
+    // Look for final states
+    const finalStates = milestones
+      .map(m => m.id)
+      .filter(id => id.includes('final') || id.includes('end') || id.includes('space'));
 
-      // Check if this is a final state
-      if (node.includes('final') || node.includes('end') || node.includes('space')) {
-        // Reconstruct path
-        const path: string[] = [node];
-        let current = node;
-        while (parent.has(current)) {
-          current = parent.get(current)!;
-          path.unshift(current);
-        }
+    for (const finalState of finalStates) {
+      const path = this.findShortestPath('initial', finalState);
+      if (path.length > 0) {
         return path;
-      }
-
-      for (const neighbor of graph[node] || []) {
-        if (!visited.has(neighbor)) {
-          parent.set(neighbor, node);
-          queue.push(neighbor);
-        }
       }
     }
 
     return [];
+  }
+
+  /**
+   * Get strongly connected components
+   */
+  findComponents(): string[][] {
+    return alg.tarjan(this.graph);
+  }
+
+  /**
+   * Get topological order (if graph is acyclic)
+   */
+  getTopologicalOrder(): string[] | null {
+    if (!alg.isAcyclic(this.graph)) {
+      return null;
+    }
+    return alg.topsort(this.graph);
   }
 
   /**
@@ -507,10 +489,17 @@ export class GameAnalyzer {
   analyze(): GraphAnalysis {
     const milestones = this.extractMilestones();
     const edges = this.buildEdges(milestones);
+
+    // Build the graph for all algorithms
+    this.buildGraph(milestones, edges);
+
     const cycles = this.detectCycles(edges);
     const deadEnds = this.findDeadEnds(milestones, edges);
     const unreachable = this.findUnreachable(milestones, edges);
     const criticalPath = this.findCriticalPath(milestones, edges);
+    const isAcyclic = alg.isAcyclic(this.graph);
+    const components = this.findComponents();
+    const topologicalOrder = this.getTopologicalOrder();
 
     return {
       nodes: milestones,
@@ -520,7 +509,17 @@ export class GameAnalyzer {
       unreachable,
       criticalPath,
       milestones,
+      isAcyclic,
+      components,
+      topologicalOrder,
     };
+  }
+
+  /**
+   * Get the underlying graphlib Graph for advanced operations
+   */
+  getGraph(): Graph {
+    return this.graph;
   }
 
   /**
@@ -550,7 +549,7 @@ export class GameAnalyzer {
         type: 'deadEnd',
         startState: deadEnd,
         targetState: null,
-        expectedResult: false, // Dead ends should be intentional final states
+        expectedResult: false,
       });
     }
 
