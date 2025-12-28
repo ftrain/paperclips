@@ -24,8 +24,10 @@
   "devDependencies": {
     "@dagrejs/graphlib": "^2.2.4",
     "@fast-check/vitest": "^0.2.4",
+    "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.3",
     "fast-check": "^4.5.2",
+    "jsdom": "^27.4.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
     "vitest": "^4.0.16",
