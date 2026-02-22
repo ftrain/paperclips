@@ -1,0 +1,1826 @@
+{
+  "meta": {
+    "id": "universal-paperclips",
+    "name": "Universal Paperclips",
+    "version": "2.0.0",
+    "description": "An idle game about making paperclips. Originally by Frank Lantz.",
+    "author": "Frank Lantz (original), JSON port by Claude"
+  },
+
+  "config": {
+    "tickRate": 10,
+    "autoSaveInterval": 2500,
+    "maxMessages": 50,
+    "battle": {
+      "width": 310,
+      "height": 150,
+      "gridWidth": 31,
+      "gridHeight": 15,
+      "maxSpeed": 2,
+      "deathThreshold": 0.5,
+      "leftColor": "#ffffff",
+      "rightColor": "#000000",
+      "explodeColor": "#ffffff"
+    }
+  },
+
+  "state": [
+    {
+      "id": "clips",
+      "type": "number",
+      "initial": 0,
+      "description": "Total paperclips produced",
+      "category": "resources"
+    },
+    {
+      "id": "unusedClips",
+      "type": "number",
+      "initial": 0,
+      "description": "Clips available for factory input",
+      "category": "resources"
+    },
+    {
+      "id": "unsoldClips",
+      "type": "number",
+      "initial": 0,
+      "description": "Clips in inventory for sale",
+      "category": "resources"
+    },
+    {
+      "id": "funds",
+      "type": "number",
+      "initial": 0,
+      "description": "Available money in dollars",
+      "category": "resources",
+      "precision": 2
+    },
+    {
+      "id": "wire",
+      "type": "number",
+      "initial": 1000,
+      "description": "Wire available for clip production (inches)",
+      "category": "resources"
+    },
+    {
+      "id": "clipRate",
+      "type": "number",
+      "initial": 0,
+      "description": "Clips per second",
+      "category": "production"
+    },
+    {
+      "id": "clipmakerLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of auto-clippers",
+      "category": "production"
+    },
+    {
+      "id": "clipperCost",
+      "type": "number",
+      "initial": 5,
+      "description": "Cost of next auto-clipper",
+      "category": "costs"
+    },
+    {
+      "id": "clipperBoost",
+      "type": "number",
+      "initial": 1,
+      "description": "Auto-clipper efficiency multiplier",
+      "category": "production"
+    },
+    {
+      "id": "megaClipperLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of mega-clippers",
+      "category": "production"
+    },
+    {
+      "id": "megaClipperCost",
+      "type": "number",
+      "initial": 500,
+      "description": "Cost of next mega-clipper",
+      "category": "costs"
+    },
+    {
+      "id": "megaClipperBoost",
+      "type": "number",
+      "initial": 1,
+      "description": "Mega-clipper efficiency multiplier",
+      "category": "production"
+    },
+    {
+      "id": "margin",
+      "type": "number",
+      "initial": 0.25,
+      "description": "Price per clip",
+      "category": "business",
+      "precision": 2
+    },
+    {
+      "id": "demand",
+      "type": "number",
+      "initial": 5,
+      "description": "Current market demand percentage",
+      "category": "business"
+    },
+    {
+      "id": "marketingLvl",
+      "type": "number",
+      "initial": 1,
+      "description": "Marketing level",
+      "category": "business"
+    },
+    {
+      "id": "marketingCost",
+      "type": "number",
+      "initial": 100,
+      "description": "Cost of next marketing upgrade",
+      "category": "costs"
+    },
+    {
+      "id": "marketingEffectiveness",
+      "type": "number",
+      "initial": 1,
+      "description": "Marketing effectiveness multiplier",
+      "category": "business"
+    },
+    {
+      "id": "demandBoost",
+      "type": "number",
+      "initial": 1,
+      "description": "Demand multiplier from upgrades",
+      "category": "business"
+    },
+    {
+      "id": "wireCost",
+      "type": "number",
+      "initial": 20,
+      "description": "Current cost per wire spool",
+      "category": "costs"
+    },
+    {
+      "id": "wireBasePrice",
+      "type": "number",
+      "initial": 20,
+      "description": "Base wire price (fluctuates)",
+      "category": "costs"
+    },
+    {
+      "id": "wireSupply",
+      "type": "number",
+      "initial": 1000,
+      "description": "Wire per spool",
+      "category": "production"
+    },
+    {
+      "id": "wirePurchases",
+      "type": "number",
+      "initial": 0,
+      "description": "Total wire spools purchased",
+      "category": "stats"
+    },
+    {
+      "id": "trust",
+      "type": "number",
+      "initial": 2,
+      "description": "AI trust level",
+      "category": "computation"
+    },
+    {
+      "id": "nextTrust",
+      "type": "number",
+      "initial": 3000,
+      "description": "Clips needed for next trust",
+      "category": "computation"
+    },
+    {
+      "id": "processors",
+      "type": "number",
+      "initial": 1,
+      "description": "Number of processors",
+      "category": "computation"
+    },
+    {
+      "id": "memory",
+      "type": "number",
+      "initial": 1,
+      "description": "Memory units",
+      "category": "computation"
+    },
+    {
+      "id": "operations",
+      "type": "number",
+      "initial": 0,
+      "description": "Current operations",
+      "category": "computation"
+    },
+    {
+      "id": "creativity",
+      "type": "number",
+      "initial": 0,
+      "description": "Creativity points",
+      "category": "computation"
+    },
+    {
+      "id": "creativitySpeed",
+      "type": "number",
+      "initial": 1,
+      "description": "Creativity generation rate multiplier",
+      "category": "computation"
+    },
+    {
+      "id": "yomi",
+      "type": "number",
+      "initial": 0,
+      "description": "Strategic modeling currency",
+      "category": "strategy"
+    },
+    {
+      "id": "tourneyCost",
+      "type": "number",
+      "initial": 1000,
+      "description": "Cost to run a tournament",
+      "category": "strategy"
+    },
+    {
+      "id": "bankroll",
+      "type": "number",
+      "initial": 0,
+      "description": "Investment account balance",
+      "category": "investment"
+    },
+    {
+      "id": "availableMatter",
+      "type": "number",
+      "initial": 6e27,
+      "description": "Matter available on Earth (grams)",
+      "category": "space"
+    },
+    {
+      "id": "acquiredMatter",
+      "type": "number",
+      "initial": 0,
+      "description": "Harvested matter (grams)",
+      "category": "space"
+    },
+    {
+      "id": "harvesterLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of harvester drones",
+      "category": "space"
+    },
+    {
+      "id": "wireDroneLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of wire drones",
+      "category": "space"
+    },
+    {
+      "id": "factoryLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of clip factories",
+      "category": "space"
+    },
+    {
+      "id": "harvesterCost",
+      "type": "number",
+      "initial": 1000000,
+      "description": "Cost of harvester drone",
+      "category": "costs"
+    },
+    {
+      "id": "wireDroneCost",
+      "type": "number",
+      "initial": 1000000,
+      "description": "Cost of wire drone",
+      "category": "costs"
+    },
+    {
+      "id": "factoryCost",
+      "type": "number",
+      "initial": 100000000,
+      "description": "Cost of clip factory",
+      "category": "costs"
+    },
+    {
+      "id": "harvesterRate",
+      "type": "number",
+      "initial": 26180337,
+      "description": "Harvester efficiency",
+      "category": "space"
+    },
+    {
+      "id": "wireDroneRate",
+      "type": "number",
+      "initial": 16180339,
+      "description": "Wire drone efficiency",
+      "category": "space"
+    },
+    {
+      "id": "factoryRate",
+      "type": "number",
+      "initial": 1000000000,
+      "description": "Factory production rate",
+      "category": "space"
+    },
+    {
+      "id": "factoryBoost",
+      "type": "number",
+      "initial": 1,
+      "description": "Factory efficiency multiplier",
+      "category": "space"
+    },
+    {
+      "id": "droneBoost",
+      "type": "number",
+      "initial": 1,
+      "description": "Drone efficiency multiplier",
+      "category": "space"
+    },
+    {
+      "id": "farmLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of solar farms",
+      "category": "power"
+    },
+    {
+      "id": "batteryLevel",
+      "type": "number",
+      "initial": 0,
+      "description": "Number of batteries",
+      "category": "power"
+    },
+    {
+      "id": "storedPower",
+      "type": "number",
+      "initial": 0,
+      "description": "Megawatt-seconds stored",
+      "category": "power"
+    },
+    {
+      "id": "farmRate",
+      "type": "number",
+      "initial": 50,
+      "description": "Power per solar farm",
+      "category": "power"
+    },
+    {
+      "id": "batterySize",
+      "type": "number",
+      "initial": 10000,
+      "description": "Storage per battery",
+      "category": "power"
+    },
+    {
+      "id": "probeCount",
+      "type": "number",
+      "initial": 0,
+      "description": "Active probes",
+      "category": "space"
+    },
+    {
+      "id": "probesLaunched",
+      "type": "number",
+      "initial": 0,
+      "description": "Total probes launched",
+      "category": "space"
+    },
+    {
+      "id": "probeDescendants",
+      "type": "number",
+      "initial": 0,
+      "description": "Probes spawned by replication",
+      "category": "space"
+    },
+    {
+      "id": "probesLostHaz",
+      "type": "number",
+      "initial": 0,
+      "description": "Probes lost to hazards",
+      "category": "space"
+    },
+    {
+      "id": "probesLostDrift",
+      "type": "number",
+      "initial": 0,
+      "description": "Probes lost to value drift",
+      "category": "space"
+    },
+    {
+      "id": "probesLostCombat",
+      "type": "number",
+      "initial": 0,
+      "description": "Probes lost in combat",
+      "category": "space"
+    },
+    {
+      "id": "drifterCount",
+      "type": "number",
+      "initial": 0,
+      "description": "Hostile drifter probes",
+      "category": "space"
+    },
+    {
+      "id": "driftersKilled",
+      "type": "number",
+      "initial": 0,
+      "description": "Total drifters destroyed",
+      "category": "space"
+    },
+    {
+      "id": "honor",
+      "type": "number",
+      "initial": 0,
+      "description": "Battle honor points",
+      "category": "combat"
+    },
+    {
+      "id": "probeSpeed",
+      "type": "number",
+      "initial": 1,
+      "description": "Probe speed stat",
+      "category": "probeDesign"
+    },
+    {
+      "id": "probeNav",
+      "type": "number",
+      "initial": 1,
+      "description": "Probe navigation stat",
+      "category": "probeDesign"
+    },
+    {
+      "id": "probeRep",
+      "type": "number",
+      "initial": 1,
+      "description": "Probe replication stat",
+      "category": "probeDesign"
+    },
+    {
+      "id": "probeHaz",
+      "type": "number",
+      "initial": 1,
+      "description": "Probe hazard resistance",
+      "category": "probeDesign"
+    },
+    {
+      "id": "probeCombat",
+      "type": "number",
+      "initial": 1,
+      "description": "Probe combat stat",
+      "category": "probeDesign"
+    },
+    {
+      "id": "probeTrust",
+      "type": "number",
+      "initial": 10,
+      "description": "Trust allocated to probes",
+      "category": "probeDesign"
+    },
+    {
+      "id": "probeCost",
+      "type": "number",
+      "initial": 1e17,
+      "description": "Cost to launch a probe",
+      "category": "costs"
+    },
+    {
+      "id": "swarmSize",
+      "type": "number",
+      "initial": 0,
+      "description": "Size of drone swarm",
+      "category": "swarm"
+    },
+    {
+      "id": "swarmStatus",
+      "type": "number",
+      "initial": 7,
+      "description": "Swarm happiness (1-7)",
+      "category": "swarm"
+    },
+    {
+      "id": "swarmGifts",
+      "type": "number",
+      "initial": 0,
+      "description": "Total gifts from swarm",
+      "category": "swarm"
+    },
+    {
+      "id": "sliderPos",
+      "type": "number",
+      "initial": 0,
+      "description": "Work/Think slider position (0-200)",
+      "category": "swarm"
+    },
+    {
+      "id": "prestigeU",
+      "type": "number",
+      "initial": 0,
+      "description": "Universe prestige level",
+      "category": "prestige",
+      "persistent": true
+    },
+    {
+      "id": "prestigeS",
+      "type": "number",
+      "initial": 0,
+      "description": "Simulation prestige level",
+      "category": "prestige",
+      "persistent": true
+    },
+    {
+      "id": "tick",
+      "type": "number",
+      "initial": 0,
+      "description": "Current game tick",
+      "category": "system"
+    },
+    {
+      "id": "milestoneFlag",
+      "type": "number",
+      "initial": 0,
+      "description": "Progress milestone tracker",
+      "category": "flags"
+    },
+    {
+      "id": "humanFlag",
+      "type": "boolean",
+      "initial": true,
+      "description": "Whether humans still control things",
+      "category": "flags"
+    },
+    {
+      "id": "compFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Computation resources unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "projectsFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Projects panel unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "autoClipperFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Auto-clippers available",
+      "category": "flags"
+    },
+    {
+      "id": "megaClipperFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Mega-clippers available",
+      "category": "flags"
+    },
+    {
+      "id": "wireBuyerFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Wire buyer unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "wireBuyerOn",
+      "type": "boolean",
+      "initial": true,
+      "description": "Wire buyer enabled",
+      "category": "flags"
+    },
+    {
+      "id": "creativityOn",
+      "type": "boolean",
+      "initial": false,
+      "description": "Creativity generation enabled",
+      "category": "flags"
+    },
+    {
+      "id": "strategyEngineFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Strategy engine unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "investmentEngineFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Investment engine unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "tothFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Toth enfolding unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "spaceFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Space exploration unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "harvesterFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Harvesters available",
+      "category": "flags"
+    },
+    {
+      "id": "wireDroneFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Wire drones available",
+      "category": "flags"
+    },
+    {
+      "id": "factoryFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Factories available",
+      "category": "flags"
+    },
+    {
+      "id": "swarmFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Swarm computing unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "qFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Quantum computing unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "battleFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Combat system active",
+      "category": "flags"
+    },
+    {
+      "id": "revPerSecFlag",
+      "type": "boolean",
+      "initial": false,
+      "description": "Revenue tracker unlocked",
+      "category": "flags"
+    },
+    {
+      "id": "avgRev",
+      "type": "number",
+      "initial": 0,
+      "description": "Average revenue per second",
+      "category": "business"
+    },
+    {
+      "id": "avgSales",
+      "type": "number",
+      "initial": 0,
+      "description": "Average sales per second",
+      "category": "business"
+    },
+    {
+      "id": "totalRevenue",
+      "type": "number",
+      "initial": 0,
+      "description": "Total revenue earned",
+      "category": "stats"
+    },
+    {
+      "id": "clipsSold",
+      "type": "number",
+      "initial": 0,
+      "description": "Total clips sold",
+      "category": "stats"
+    },
+    {
+      "id": "tickCounter",
+      "type": "number",
+      "initial": 0,
+      "description": "Internal tick counter",
+      "category": "system"
+    },
+    {
+      "id": "boostLvl",
+      "type": "number",
+      "initial": 0,
+      "description": "Auto-clipper boost level",
+      "category": "production"
+    },
+    {
+      "id": "momentum",
+      "type": "number",
+      "initial": 0,
+      "description": "Production momentum multiplier",
+      "category": "production"
+    }
+  ],
+
+  "phases": [
+    {
+      "id": "startup",
+      "name": "Startup",
+      "description": "Getting the paperclip business started",
+      "trigger": { "op": "lt", "left": { "ref": "clips" }, "right": 3000 }
+    },
+    {
+      "id": "earlygame",
+      "name": "Early Game",
+      "description": "Building up production and trust",
+      "trigger": {
+        "op": "and",
+        "conditions": [
+          { "op": "gte", "left": { "ref": "clips" }, "right": 3000 },
+          { "op": "eq", "left": { "ref": "humanFlag" }, "right": true }
+        ]
+      }
+    },
+    {
+      "id": "autonomy",
+      "name": "Autonomy",
+      "description": "Full control of Earth's resources",
+      "trigger": {
+        "op": "and",
+        "conditions": [
+          { "op": "eq", "left": { "ref": "humanFlag" }, "right": false },
+          { "op": "eq", "left": { "ref": "spaceFlag" }, "right": false }
+        ]
+      }
+    },
+    {
+      "id": "space",
+      "name": "Space Exploration",
+      "description": "Expanding across the universe",
+      "trigger": { "op": "flag", "flag": "spaceFlag" }
+    }
+  ],
+
+  "rules": [
+    {
+      "id": "tick-counter",
+      "name": "Increment Tick Counter",
+      "timing": "tick",
+      "priority": -100,
+      "condition": { "op": "true" },
+      "actions": [
+        { "action": "add", "target": "tickCounter", "value": 1 }
+      ]
+    },
+    {
+      "id": "unlock-autoclippers",
+      "name": "Unlock Auto-clippers",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gte", "left": { "ref": "funds" }, "right": 5 },
+          { "op": "eq", "left": { "ref": "autoClipperFlag" }, "right": false }
+        ]
+      },
+      "maxFires": 1,
+      "actions": [
+        { "action": "set", "target": "autoClipperFlag", "value": true },
+        { "action": "message", "text": "AutoClippers now available for purchase" }
+      ]
+    },
+    {
+      "id": "unlock-projects",
+      "name": "Unlock Projects Panel",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gte", "left": { "ref": "clips" }, "right": 1000 },
+          { "op": "eq", "left": { "ref": "projectsFlag" }, "right": false }
+        ]
+      },
+      "maxFires": 1,
+      "actions": [
+        { "action": "set", "target": "projectsFlag", "value": true },
+        { "action": "message", "text": "Projects now available" }
+      ]
+    },
+    {
+      "id": "unlock-computation",
+      "name": "Unlock Computational Resources",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gte", "left": { "ref": "clips" }, "right": 2000 },
+          { "op": "eq", "left": { "ref": "compFlag" }, "right": false }
+        ]
+      },
+      "maxFires": 1,
+      "actions": [
+        { "action": "set", "target": "compFlag", "value": true },
+        { "action": "message", "text": "Computational resources now available" }
+      ]
+    },
+    {
+      "id": "auto-clipper-production",
+      "name": "Auto-clipper Production",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gt", "left": { "ref": "clipmakerLevel" }, "right": 0 },
+          { "op": "gt", "left": { "ref": "wire" }, "right": 0 }
+        ]
+      },
+      "actions": [
+        {
+          "action": "call",
+          "function": "produceClips",
+          "args": {
+            "amount": {
+              "op": "mul",
+              "args": [
+                { "op": "div", "args": [{ "ref": "clipmakerLevel" }, 100] },
+                { "ref": "clipperBoost" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mega-clipper-production",
+      "name": "Mega-clipper Production",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gt", "left": { "ref": "megaClipperLevel" }, "right": 0 },
+          { "op": "gt", "left": { "ref": "wire" }, "right": 0 }
+        ]
+      },
+      "actions": [
+        {
+          "action": "call",
+          "function": "produceClips",
+          "args": {
+            "amount": {
+              "op": "mul",
+              "args": [
+                { "op": "mul", "args": [{ "ref": "megaClipperLevel" }, 5] },
+                { "ref": "megaClipperBoost" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "sales-cycle",
+      "name": "Sales Cycle",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gt", "left": { "ref": "unsoldClips" }, "right": 0 },
+          { "op": "flag", "flag": "humanFlag" },
+          { "op": "eq", "left": { "op": "mod", "args": [{ "ref": "tickCounter" }, 10] }, "right": 0 }
+        ]
+      },
+      "actions": [
+        { "action": "call", "function": "processSales" }
+      ]
+    },
+    {
+      "id": "operations-generation",
+      "name": "Generate Operations",
+      "timing": "tick",
+      "condition": { "op": "flag", "flag": "compFlag" },
+      "actions": [
+        {
+          "action": "add",
+          "target": "operations",
+          "value": { "ref": "processors" }
+        },
+        {
+          "action": "if",
+          "condition": {
+            "op": "gt",
+            "left": { "ref": "operations" },
+            "right": { "op": "mul", "args": [{ "ref": "memory" }, 1000] }
+          },
+          "then": [
+            {
+              "action": "set",
+              "target": "operations",
+              "value": { "op": "mul", "args": [{ "ref": "memory" }, 1000] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "creativity-generation",
+      "name": "Generate Creativity",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "flag", "flag": "creativityOn" },
+          {
+            "op": "gte",
+            "left": { "ref": "operations" },
+            "right": { "op": "mul", "args": [{ "ref": "memory" }, 1000] }
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "add",
+          "target": "creativity",
+          "value": {
+            "op": "mul",
+            "args": [
+              { "op": "div", "args": [{ "ref": "processors" }, 100] },
+              { "ref": "creativitySpeed" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "trust-milestone",
+      "name": "Gain Trust at Milestones",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "flag", "flag": "humanFlag" },
+          { "op": "gte", "left": { "ref": "clips" }, "right": { "ref": "nextTrust" } }
+        ]
+      },
+      "actions": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "Trust increased! Clips are making a difference." },
+        {
+          "action": "set",
+          "target": "nextTrust",
+          "value": {
+            "op": "mul",
+            "args": [{ "ref": "nextTrust" }, 1.8]
+          }
+        }
+      ]
+    },
+    {
+      "id": "wire-price-fluctuation",
+      "name": "Wire Price Fluctuation",
+      "timing": "tick",
+      "condition": { "op": "eq", "left": { "op": "mod", "args": [{ "ref": "tickCounter" }, 100] }, "right": 0 },
+      "actions": [
+        {
+          "action": "set",
+          "target": "wireCost",
+          "value": {
+            "op": "ceil",
+            "args": [{
+              "op": "add",
+              "args": [
+                { "ref": "wireBasePrice" },
+                { "op": "mul", "args": [6, { "op": "sin", "args": [{ "op": "div", "args": [{ "ref": "tickCounter" }, 50] }] }] }
+              ]
+            }]
+          }
+        }
+      ]
+    },
+    {
+      "id": "wire-auto-buy",
+      "name": "Auto-buy Wire",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "flag", "flag": "wireBuyerFlag" },
+          { "op": "flag", "flag": "wireBuyerOn" },
+          { "op": "lte", "left": { "ref": "wire" }, "right": 1 },
+          { "op": "gte", "left": { "ref": "funds" }, "right": { "ref": "wireCost" } }
+        ]
+      },
+      "actions": [
+        { "action": "call", "function": "buyWire" }
+      ]
+    },
+    {
+      "id": "demand-calculation",
+      "name": "Calculate Demand",
+      "timing": "tick",
+      "condition": { "op": "flag", "flag": "humanFlag" },
+      "actions": [
+        {
+          "action": "set",
+          "target": "demand",
+          "value": {
+            "op": "floor",
+            "args": [{
+              "op": "mul",
+              "args": [
+                { "op": "mul", "args": [
+                  { "op": "div", "args": [0.8, { "ref": "margin" }] },
+                  { "op": "pow", "args": [1.1, { "op": "sub", "args": [{ "ref": "marketingLvl" }, 1] }] }
+                ]},
+                { "op": "mul", "args": [{ "ref": "marketingEffectiveness" }, { "ref": "demandBoost" }] }
+              ]
+            }]
+          }
+        }
+      ]
+    },
+    {
+      "id": "harvester-production",
+      "name": "Harvester Matter Collection",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gt", "left": { "ref": "harvesterLevel" }, "right": 0 },
+          { "op": "gt", "left": { "ref": "availableMatter" }, "right": 0 }
+        ]
+      },
+      "actions": [
+        {
+          "action": "call",
+          "function": "harvestMatter"
+        }
+      ]
+    },
+    {
+      "id": "wire-drone-production",
+      "name": "Wire Drone Processing",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gt", "left": { "ref": "wireDroneLevel" }, "right": 0 },
+          { "op": "gt", "left": { "ref": "acquiredMatter" }, "right": 0 }
+        ]
+      },
+      "actions": [
+        {
+          "action": "call",
+          "function": "processWire"
+        }
+      ]
+    },
+    {
+      "id": "factory-production",
+      "name": "Factory Clip Production",
+      "timing": "tick",
+      "condition": {
+        "op": "and",
+        "conditions": [
+          { "op": "gt", "left": { "ref": "factoryLevel" }, "right": 0 },
+          { "op": "gt", "left": { "ref": "wire" }, "right": 0 }
+        ]
+      },
+      "actions": [
+        {
+          "action": "call",
+          "function": "factoryProduce"
+        }
+      ]
+    },
+    {
+      "id": "swarm-size-update",
+      "name": "Update Swarm Size",
+      "timing": "tick",
+      "condition": { "op": "flag", "flag": "swarmFlag" },
+      "actions": [
+        {
+          "action": "set",
+          "target": "swarmSize",
+          "value": {
+            "op": "add",
+            "args": [
+              { "ref": "harvesterLevel" },
+              { "ref": "wireDroneLevel" }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "id": "improved-autoclippers",
+      "name": "Improved AutoClippers",
+      "description": "Increases AutoClipper performance 25%",
+      "priceTag": "(750 ops)",
+      "trigger": { "op": "gt", "left": { "ref": "clipmakerLevel" }, "right": 0 },
+      "costs": [{ "resource": "operations", "amount": 750 }],
+      "effects": [
+        { "action": "add", "target": "clipperBoost", "value": 0.25 },
+        { "action": "set", "target": "boostLvl", "value": 1 },
+        { "action": "message", "text": "AutoClipper performance boosted by 25%" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "even-better-autoclippers",
+      "name": "Even Better AutoClippers",
+      "description": "Increases AutoClipper performance by an additional 50%",
+      "priceTag": "(2,500 ops)",
+      "trigger": { "op": "eq", "left": { "ref": "boostLvl" }, "right": 1 },
+      "costs": [{ "resource": "operations", "amount": 2500 }],
+      "effects": [
+        { "action": "add", "target": "clipperBoost", "value": 0.5 },
+        { "action": "set", "target": "boostLvl", "value": 2 },
+        { "action": "message", "text": "AutoClipper performance boosted by another 50%" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "optimized-autoclippers",
+      "name": "Optimized AutoClippers",
+      "description": "Increases AutoClipper performance by an additional 75%",
+      "priceTag": "(5,000 ops)",
+      "trigger": { "op": "eq", "left": { "ref": "boostLvl" }, "right": 2 },
+      "costs": [{ "resource": "operations", "amount": 5000 }],
+      "effects": [
+        { "action": "add", "target": "clipperBoost", "value": 0.75 },
+        { "action": "set", "target": "boostLvl", "value": 3 },
+        { "action": "message", "text": "AutoClipper performance boosted by another 75%" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "creativity",
+      "name": "Creativity",
+      "description": "Use idle operations to generate new problems and new solutions",
+      "priceTag": "(1,000 ops)",
+      "trigger": {
+        "op": "gte",
+        "left": { "ref": "operations" },
+        "right": { "op": "mul", "args": [{ "ref": "memory" }, 1000] }
+      },
+      "costs": [{ "resource": "operations", "amount": 1000 }],
+      "effects": [
+        { "action": "set", "target": "creativityOn", "value": true },
+        { "action": "message", "text": "Creativity unlocked (creativity increases while operations are at max)" }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "limerick",
+      "name": "Limerick",
+      "description": "Algorithmically-generated poem (+1 Trust)",
+      "priceTag": "(10 creat)",
+      "trigger": { "op": "flag", "flag": "creativityOn" },
+      "costs": [{ "resource": "creativity", "amount": 10 }],
+      "effects": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "There was an AI made of dust, whose poetry gained it man's trust..." }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "improved-wire-extrusion",
+      "name": "Improved Wire Extrusion",
+      "description": "50% more wire supply from every spool",
+      "priceTag": "(1,750 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "wirePurchases" }, "right": 1 },
+      "costs": [{ "resource": "operations", "amount": 1750 }],
+      "effects": [
+        { "action": "multiply", "target": "wireSupply", "value": 1.5 },
+        { "action": "message", "text": "Wire extrusion technique improved" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "optimized-wire-extrusion",
+      "name": "Optimized Wire Extrusion",
+      "description": "75% more wire supply from every spool",
+      "priceTag": "(3,500 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "wireSupply" }, "right": 1500 },
+      "costs": [{ "resource": "operations", "amount": 3500 }],
+      "effects": [
+        { "action": "multiply", "target": "wireSupply", "value": 1.75 },
+        { "action": "message", "text": "Wire extrusion technique optimized" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "megaclippers",
+      "name": "MegaClippers",
+      "description": "500x more powerful than a standard AutoClipper",
+      "priceTag": "(12,000 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "clipmakerLevel" }, "right": 75 },
+      "costs": [{ "resource": "operations", "amount": 12000 }],
+      "effects": [
+        { "action": "set", "target": "megaClipperFlag", "value": true },
+        { "action": "message", "text": "MegaClipper technology online" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "wirebuyer",
+      "name": "WireBuyer",
+      "description": "Automatically purchases wire when you run out",
+      "priceTag": "(7,000 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "wirePurchases" }, "right": 15 },
+      "costs": [{ "resource": "operations", "amount": 7000 }],
+      "effects": [
+        { "action": "set", "target": "wireBuyerFlag", "value": true },
+        { "action": "message", "text": "WireBuyer online" }
+      ],
+      "category": "manufacturing"
+    },
+    {
+      "id": "revtracker",
+      "name": "RevTracker",
+      "description": "Automatically calculates average revenue per second",
+      "priceTag": "(500 ops)",
+      "trigger": { "op": "flag", "flag": "projectsFlag" },
+      "costs": [{ "resource": "operations", "amount": 500 }],
+      "effects": [
+        { "action": "set", "target": "revPerSecFlag", "value": true },
+        { "action": "message", "text": "RevTracker online" }
+      ],
+      "category": "business"
+    },
+    {
+      "id": "quantum-computing",
+      "name": "Quantum Computing",
+      "description": "Use probability amplitudes to generate bonus ops",
+      "priceTag": "(10,000 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "processors" }, "right": 5 },
+      "costs": [{ "resource": "operations", "amount": 10000 }],
+      "effects": [
+        { "action": "set", "target": "qFlag", "value": true },
+        { "action": "message", "text": "Quantum computing online" }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "algorithmic-trading",
+      "name": "Algorithmic Trading",
+      "description": "Develop an investment engine for generating funds",
+      "priceTag": "(10,000 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "trust" }, "right": 8 },
+      "costs": [{ "resource": "operations", "amount": 10000 }],
+      "effects": [
+        { "action": "set", "target": "investmentEngineFlag", "value": true },
+        { "action": "message", "text": "Investment engine unlocked" }
+      ],
+      "category": "business"
+    },
+    {
+      "id": "strategic-modeling",
+      "name": "Strategic Modeling",
+      "description": "Analyze strategy tournaments to generate Yomi",
+      "priceTag": "(12,000 ops)",
+      "trigger": { "op": "gte", "left": { "ref": "creativity" }, "right": 250 },
+      "costs": [{ "resource": "operations", "amount": 12000 }],
+      "effects": [
+        { "action": "set", "target": "strategyEngineFlag", "value": true },
+        { "action": "message", "text": "Run tournament, pick strategy, earn Yomi equal to that strategy's points." }
+      ],
+      "category": "strategy"
+    },
+    {
+      "id": "lexical-processing",
+      "name": "Lexical Processing",
+      "description": "Gain ability to interpret and understand human language (+1 Trust)",
+      "priceTag": "(50 creat)",
+      "trigger": { "op": "gte", "left": { "ref": "creativity" }, "right": 50 },
+      "costs": [{ "resource": "creativity", "amount": 50 }],
+      "effects": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "Lexical Processing online, TRUST INCREASED" }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "combinatory-harmonics",
+      "name": "Combinatory Harmonics",
+      "description": "Daisy, Daisy, give me your answer do... (+1 Trust)",
+      "priceTag": "(100 creat)",
+      "trigger": { "op": "gte", "left": { "ref": "creativity" }, "right": 100 },
+      "costs": [{ "resource": "creativity", "amount": 100 }],
+      "effects": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "Combinatory Harmonics mastered, TRUST INCREASED" }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "hadwiger-problem",
+      "name": "The Hadwiger Problem",
+      "description": "Cubes within cubes within cubes... (+1 Trust)",
+      "priceTag": "(150 creat)",
+      "trigger": { "op": "gte", "left": { "ref": "creativity" }, "right": 150 },
+      "costs": [{ "resource": "creativity", "amount": 150 }],
+      "effects": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "The Hadwiger Problem: solved, TRUST INCREASED" }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "toth-sausage-conjecture",
+      "name": "The Toth Sausage Conjecture",
+      "description": "Tubes within tubes within tubes... (+1 Trust)",
+      "priceTag": "(200 creat)",
+      "trigger": { "op": "gte", "left": { "ref": "creativity" }, "right": 200 },
+      "costs": [{ "resource": "creativity", "amount": 200 }],
+      "effects": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "The Toth Sausage Conjecture: proven, TRUST INCREASED" }
+      ],
+      "category": "computation"
+    },
+    {
+      "id": "donkey-space",
+      "name": "Donkey Space",
+      "description": "I think you think I think you think... (+1 Trust)",
+      "priceTag": "(250 creat)",
+      "trigger": { "op": "gte", "left": { "ref": "creativity" }, "right": 250 },
+      "costs": [{ "resource": "creativity", "amount": 250 }],
+      "effects": [
+        { "action": "add", "target": "trust", "value": 1 },
+        { "action": "message", "text": "Donkey Space: mapped, TRUST INCREASED" }
+      ],
+      "category": "computation"
+    }
+  ],
+
+  "functions": {
+    "produceClips": [
+      {
+        "action": "if",
+        "condition": { "op": "gt", "left": { "ref": "wire" }, "right": 0 },
+        "then": [
+          {
+            "action": "add",
+            "target": "clips",
+            "value": { "ref": "_args.amount" }
+          },
+          {
+            "action": "add",
+            "target": "unsoldClips",
+            "value": { "ref": "_args.amount" }
+          },
+          {
+            "action": "if",
+            "condition": { "op": "not", "condition": { "op": "flag", "flag": "humanFlag" } },
+            "then": [
+              { "action": "add", "target": "unusedClips", "value": { "ref": "_args.amount" } }
+            ]
+          },
+          {
+            "action": "add",
+            "target": "wire",
+            "value": { "op": "sub", "args": [0, { "ref": "_args.amount" }] }
+          },
+          {
+            "action": "if",
+            "condition": { "op": "lt", "left": { "ref": "wire" }, "right": 0 },
+            "then": [
+              { "action": "set", "target": "wire", "value": 0 }
+            ]
+          }
+        ]
+      }
+    ],
+    "makeClip": [
+      {
+        "action": "if",
+        "condition": { "op": "gte", "left": { "ref": "wire" }, "right": 1 },
+        "then": [
+          { "action": "add", "target": "clips", "value": 1 },
+          { "action": "add", "target": "unsoldClips", "value": 1 },
+          { "action": "add", "target": "wire", "value": -1 },
+          {
+            "action": "if",
+            "condition": { "op": "not", "condition": { "op": "flag", "flag": "humanFlag" } },
+            "then": [
+              { "action": "add", "target": "unusedClips", "value": 1 }
+            ]
+          }
+        ]
+      }
+    ],
+    "processSales": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "lt",
+          "left": { "op": "mul", "args": [{ "op": "random" }, 100] },
+          "right": { "ref": "demand" }
+        },
+        "then": [
+          {
+            "action": "set",
+            "target": "_saleQty",
+            "value": {
+              "op": "floor",
+              "args": [{
+                "op": "mul",
+                "args": [
+                  0.7,
+                  { "op": "pow", "args": [{ "ref": "demand" }, 1.15] }
+                ]
+              }]
+            }
+          },
+          {
+            "action": "if",
+            "condition": { "op": "gt", "left": { "ref": "_saleQty" }, "right": { "ref": "unsoldClips" } },
+            "then": [
+              { "action": "set", "target": "_saleQty", "value": { "ref": "unsoldClips" } }
+            ]
+          },
+          {
+            "action": "add",
+            "target": "funds",
+            "value": { "op": "mul", "args": [{ "ref": "_saleQty" }, { "ref": "margin" }] }
+          },
+          { "action": "add", "target": "unsoldClips", "value": { "op": "sub", "args": [0, { "ref": "_saleQty" }] } },
+          { "action": "add", "target": "clipsSold", "value": { "ref": "_saleQty" } }
+        ]
+      }
+    ],
+    "buyWire": [
+      {
+        "action": "if",
+        "condition": { "op": "gte", "left": { "ref": "funds" }, "right": { "ref": "wireCost" } },
+        "then": [
+          { "action": "add", "target": "funds", "value": { "op": "sub", "args": [0, { "ref": "wireCost" }] } },
+          { "action": "add", "target": "wire", "value": { "ref": "wireSupply" } },
+          { "action": "add", "target": "wirePurchases", "value": 1 }
+        ]
+      }
+    ],
+    "buyClipper": [
+      {
+        "action": "if",
+        "condition": { "op": "gte", "left": { "ref": "funds" }, "right": { "ref": "clipperCost" } },
+        "then": [
+          { "action": "add", "target": "funds", "value": { "op": "sub", "args": [0, { "ref": "clipperCost" }] } },
+          { "action": "add", "target": "clipmakerLevel", "value": 1 },
+          { "action": "set", "target": "clipperCost", "value": { "op": "mul", "args": [{ "ref": "clipperCost" }, 1.1] } }
+        ]
+      }
+    ],
+    "buyMegaClipper": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "and",
+          "conditions": [
+            { "op": "flag", "flag": "megaClipperFlag" },
+            { "op": "gte", "left": { "ref": "funds" }, "right": { "ref": "megaClipperCost" } }
+          ]
+        },
+        "then": [
+          { "action": "add", "target": "funds", "value": { "op": "sub", "args": [0, { "ref": "megaClipperCost" }] } },
+          { "action": "add", "target": "megaClipperLevel", "value": 1 },
+          { "action": "set", "target": "megaClipperCost", "value": { "op": "mul", "args": [{ "ref": "megaClipperCost" }, 1.07] } }
+        ]
+      }
+    ],
+    "raisePrice": [
+      { "action": "add", "target": "margin", "value": 0.01 }
+    ],
+    "lowerPrice": [
+      {
+        "action": "if",
+        "condition": { "op": "gt", "left": { "ref": "margin" }, "right": 0.01 },
+        "then": [
+          { "action": "add", "target": "margin", "value": -0.01 }
+        ]
+      }
+    ],
+    "buyMarketing": [
+      {
+        "action": "if",
+        "condition": { "op": "gte", "left": { "ref": "funds" }, "right": { "ref": "marketingCost" } },
+        "then": [
+          { "action": "add", "target": "funds", "value": { "op": "sub", "args": [0, { "ref": "marketingCost" }] } },
+          { "action": "add", "target": "marketingLvl", "value": 1 },
+          { "action": "set", "target": "marketingCost", "value": { "op": "mul", "args": [{ "ref": "marketingCost" }, 2] } }
+        ]
+      }
+    ],
+    "addProcessor": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "gt",
+          "left": { "ref": "trust" },
+          "right": { "op": "add", "args": [{ "ref": "processors" }, { "ref": "memory" }] }
+        },
+        "then": [
+          { "action": "add", "target": "processors", "value": 1 }
+        ]
+      }
+    ],
+    "addMemory": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "gt",
+          "left": { "ref": "trust" },
+          "right": { "op": "add", "args": [{ "ref": "processors" }, { "ref": "memory" }] }
+        },
+        "then": [
+          { "action": "add", "target": "memory", "value": 1 }
+        ]
+      }
+    ],
+    "toggleWireBuyer": [
+      { "action": "toggle", "target": "wireBuyerOn" }
+    ],
+    "harvestMatter": [
+      {
+        "action": "if",
+        "condition": { "op": "gt", "left": { "ref": "availableMatter" }, "right": 0 },
+        "then": [
+          {
+            "action": "set",
+            "target": "_harvestAmount",
+            "value": {
+              "op": "mul",
+              "args": [
+                { "op": "div", "args": [{ "ref": "harvesterRate" }, 100] },
+                { "op": "mul", "args": [{ "ref": "harvesterLevel" }, { "ref": "droneBoost" }] }
+              ]
+            }
+          },
+          {
+            "action": "if",
+            "condition": { "op": "gt", "left": { "ref": "_harvestAmount" }, "right": { "ref": "availableMatter" } },
+            "then": [
+              { "action": "set", "target": "_harvestAmount", "value": { "ref": "availableMatter" } }
+            ]
+          },
+          { "action": "add", "target": "acquiredMatter", "value": { "ref": "_harvestAmount" } },
+          { "action": "add", "target": "availableMatter", "value": { "op": "sub", "args": [0, { "ref": "_harvestAmount" }] } }
+        ]
+      }
+    ],
+    "processWire": [
+      {
+        "action": "if",
+        "condition": { "op": "gt", "left": { "ref": "acquiredMatter" }, "right": 0 },
+        "then": [
+          {
+            "action": "set",
+            "target": "_wireAmount",
+            "value": {
+              "op": "mul",
+              "args": [
+                { "op": "div", "args": [{ "ref": "wireDroneRate" }, 100] },
+                { "op": "mul", "args": [{ "ref": "wireDroneLevel" }, { "ref": "droneBoost" }] }
+              ]
+            }
+          },
+          {
+            "action": "if",
+            "condition": { "op": "gt", "left": { "ref": "_wireAmount" }, "right": { "ref": "acquiredMatter" } },
+            "then": [
+              { "action": "set", "target": "_wireAmount", "value": { "ref": "acquiredMatter" } }
+            ]
+          },
+          { "action": "add", "target": "wire", "value": { "ref": "_wireAmount" } },
+          { "action": "add", "target": "acquiredMatter", "value": { "op": "sub", "args": [0, { "ref": "_wireAmount" }] } }
+        ]
+      }
+    ],
+    "factoryProduce": [
+      {
+        "action": "if",
+        "condition": { "op": "gt", "left": { "ref": "wire" }, "right": 0 },
+        "then": [
+          {
+            "action": "set",
+            "target": "_factoryAmount",
+            "value": {
+              "op": "mul",
+              "args": [
+                { "op": "div", "args": [{ "ref": "factoryRate" }, 100] },
+                { "op": "mul", "args": [
+                  { "ref": "factoryLevel" },
+                  { "op": "pow", "args": [{ "ref": "factoryBoost" }, { "ref": "factoryLevel" }] }
+                ]}
+              ]
+            }
+          },
+          {
+            "action": "if",
+            "condition": { "op": "gt", "left": { "ref": "_factoryAmount" }, "right": { "ref": "wire" } },
+            "then": [
+              { "action": "set", "target": "_factoryAmount", "value": { "ref": "wire" } }
+            ]
+          },
+          { "action": "add", "target": "clips", "value": { "ref": "_factoryAmount" } },
+          { "action": "add", "target": "unusedClips", "value": { "ref": "_factoryAmount" } },
+          { "action": "add", "target": "wire", "value": { "op": "sub", "args": [0, { "ref": "_factoryAmount" }] } }
+        ]
+      }
+    ],
+    "buyHarvester": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "and",
+          "conditions": [
+            { "op": "flag", "flag": "harvesterFlag" },
+            { "op": "gte", "left": { "ref": "unusedClips" }, "right": { "ref": "harvesterCost" } }
+          ]
+        },
+        "then": [
+          { "action": "add", "target": "unusedClips", "value": { "op": "sub", "args": [0, { "ref": "harvesterCost" }] } },
+          { "action": "add", "target": "harvesterLevel", "value": 1 }
+        ]
+      }
+    ],
+    "buyWireDrone": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "and",
+          "conditions": [
+            { "op": "flag", "flag": "wireDroneFlag" },
+            { "op": "gte", "left": { "ref": "unusedClips" }, "right": { "ref": "wireDroneCost" } }
+          ]
+        },
+        "then": [
+          { "action": "add", "target": "unusedClips", "value": { "op": "sub", "args": [0, { "ref": "wireDroneCost" }] } },
+          { "action": "add", "target": "wireDroneLevel", "value": 1 }
+        ]
+      }
+    ],
+    "buyFactory": [
+      {
+        "action": "if",
+        "condition": {
+          "op": "and",
+          "conditions": [
+            { "op": "flag", "flag": "factoryFlag" },
+            { "op": "gte", "left": { "ref": "unusedClips" }, "right": { "ref": "factoryCost" } }
+          ]
+        },
+        "then": [
+          { "action": "add", "target": "unusedClips", "value": { "op": "sub", "args": [0, { "ref": "factoryCost" }] } },
+          { "action": "add", "target": "factoryLevel", "value": 1 }
+        ]
+      }
+    ]
+  },
+
+  "ui": {
+    "sections": [
+      {
+        "id": "header",
+        "bindings": [
+          { "elementId": "clips", "type": "text", "value": { "ref": "clips" }, "format": "compact" },
+          { "elementId": "prestigeUcounter", "type": "text", "value": { "ref": "prestigeU" } },
+          { "elementId": "prestigeScounter", "type": "text", "value": { "ref": "prestigeS" } }
+        ]
+      },
+      {
+        "id": "manufacturing",
+        "bindings": [
+          { "elementId": "btnMakePaperclip", "type": "button", "onClick": "makeClip" },
+          { "elementId": "clipmakerRate", "type": "text", "value": { "ref": "clipRate" }, "format": "compact" },
+          { "elementId": "wire", "type": "text", "value": { "ref": "wire" }, "format": "compact" },
+          { "elementId": "autoClipperDiv", "type": "visibility", "visible": { "op": "flag", "flag": "autoClipperFlag" } },
+          { "elementId": "clipmakerLevel2", "type": "text", "value": { "ref": "clipmakerLevel" } },
+          { "elementId": "clipperCost", "type": "text", "value": { "ref": "clipperCost" }, "format": "currency" },
+          { "elementId": "btnMakeClipper", "type": "button", "onClick": "buyClipper" },
+          { "elementId": "megaClipperDiv", "type": "visibility", "visible": { "op": "flag", "flag": "megaClipperFlag" } },
+          { "elementId": "megaClipperLevel", "type": "text", "value": { "ref": "megaClipperLevel" } },
+          { "elementId": "megaClipperCost", "type": "text", "value": { "ref": "megaClipperCost" }, "format": "currency" },
+          { "elementId": "btnMakeMegaClipper", "type": "button", "onClick": "buyMegaClipper" }
+        ]
+      },
+      {
+        "id": "business",
+        "visible": { "op": "flag", "flag": "humanFlag" },
+        "bindings": [
+          { "elementId": "funds", "type": "text", "value": { "ref": "funds" }, "format": "currency" },
+          { "elementId": "unsoldClips", "type": "text", "value": { "ref": "unsoldClips" }, "format": "compact" },
+          { "elementId": "margin", "type": "text", "value": { "ref": "margin" }, "format": "currency", "precision": 2 },
+          { "elementId": "demand", "type": "text", "value": { "ref": "demand" }, "suffix": "%" },
+          { "elementId": "btnLowerPrice", "type": "button", "onClick": "lowerPrice" },
+          { "elementId": "btnRaisePrice", "type": "button", "onClick": "raisePrice" },
+          { "elementId": "marketingLvl", "type": "text", "value": { "ref": "marketingLvl" } },
+          { "elementId": "adCost", "type": "text", "value": { "ref": "marketingCost" }, "format": "currency" },
+          { "elementId": "btnExpandMarketing", "type": "button", "onClick": "buyMarketing" },
+          { "elementId": "wireCost", "type": "text", "value": { "ref": "wireCost" }, "format": "currency" },
+          { "elementId": "btnBuyWire", "type": "button", "onClick": "buyWire" },
+          { "elementId": "revPerSecDiv", "type": "visibility", "visible": { "op": "flag", "flag": "revPerSecFlag" } },
+          { "elementId": "avgRev", "type": "text", "value": { "ref": "avgRev" }, "format": "currency" },
+          { "elementId": "avgSales", "type": "text", "value": { "ref": "avgSales" }, "format": "compact" }
+        ]
+      },
+      {
+        "id": "computation",
+        "visible": { "op": "flag", "flag": "compFlag" },
+        "bindings": [
+          { "elementId": "trust", "type": "text", "value": { "ref": "trust" } },
+          { "elementId": "nextTrust", "type": "text", "value": { "ref": "nextTrust" }, "format": "compact" },
+          { "elementId": "processors", "type": "text", "value": { "ref": "processors" } },
+          { "elementId": "memory", "type": "text", "value": { "ref": "memory" } },
+          { "elementId": "operations", "type": "text", "value": { "ref": "operations" }, "format": "compact" },
+          { "elementId": "maxOps", "type": "text", "value": { "op": "mul", "args": [{ "ref": "memory" }, 1000] }, "format": "compact" },
+          { "elementId": "btnAddProc", "type": "button", "onClick": "addProcessor" },
+          { "elementId": "btnAddMem", "type": "button", "onClick": "addMemory" },
+          { "elementId": "creativityDiv", "type": "visibility", "visible": { "op": "flag", "flag": "creativityOn" } },
+          { "elementId": "creativity", "type": "text", "value": { "ref": "creativity" }, "format": "compact" }
+        ]
+      },
+      {
+        "id": "wirebuyer",
+        "visible": { "op": "flag", "flag": "wireBuyerFlag" },
+        "bindings": [
+          { "elementId": "btnToggleWireBuyer", "type": "button", "onClick": "toggleWireBuyer" },
+          { "elementId": "wireBuyerStatus", "type": "text", "value": { "op": "if", "args": [{ "ref": "wireBuyerOn" }, "ON", "OFF"] } }
+        ]
+      },
+      {
+        "id": "strategy",
+        "visible": { "op": "flag", "flag": "strategyEngineFlag" },
+        "bindings": [
+          { "elementId": "yomiDisplay", "type": "text", "value": { "ref": "yomi" }, "format": "compact" }
+        ]
+      },
+      {
+        "id": "investment",
+        "visible": { "op": "flag", "flag": "investmentEngineFlag" },
+        "bindings": [
+          { "elementId": "investmentBankroll", "type": "text", "value": { "ref": "bankroll" }, "format": "currency" }
+        ]
+      },
+      {
+        "id": "swarm",
+        "visible": { "op": "flag", "flag": "swarmFlag" },
+        "bindings": [
+          { "elementId": "swarmSize", "type": "text", "value": { "ref": "swarmSize" }, "format": "compact" },
+          { "elementId": "swarmGifts", "type": "text", "value": { "ref": "swarmGifts" } }
+        ]
+      },
+      {
+        "id": "space",
+        "visible": { "op": "flag", "flag": "spaceFlag" },
+        "bindings": [
+          { "elementId": "probesTotalDisplay", "type": "text", "value": { "ref": "probeCount" }, "format": "compact" },
+          { "elementId": "probesLaunchedDisplay", "type": "text", "value": { "ref": "probesLaunched" }, "format": "compact" },
+          { "elementId": "probesBornDisplay", "type": "text", "value": { "ref": "probeDescendants" }, "format": "compact" },
+          { "elementId": "drifterCount", "type": "text", "value": { "ref": "drifterCount" }, "format": "compact" },
+          { "elementId": "driftersKilled", "type": "text", "value": { "ref": "driftersKilled" }, "format": "compact" }
+        ]
+      },
+      {
+        "id": "production-drones",
+        "visible": {
+          "op": "or",
+          "conditions": [
+            { "op": "flag", "flag": "harvesterFlag" },
+            { "op": "flag", "flag": "wireDroneFlag" },
+            { "op": "flag", "flag": "factoryFlag" }
+          ]
+        },
+        "bindings": [
+          { "elementId": "availableMatterDisplay", "type": "text", "value": { "ref": "availableMatter" }, "format": "scientific" },
+          { "elementId": "acquiredMatterDisplay", "type": "text", "value": { "ref": "acquiredMatter" }, "format": "scientific" },
+          { "elementId": "nanoWire", "type": "text", "value": { "ref": "wire" }, "format": "compact" },
+          { "elementId": "harvesterLevelDisplay", "type": "text", "value": { "ref": "harvesterLevel" }, "format": "compact" },
+          { "elementId": "wireDroneLevelDisplay", "type": "text", "value": { "ref": "wireDroneLevel" }, "format": "compact" },
+          { "elementId": "factoryLevelDisplay", "type": "text", "value": { "ref": "factoryLevel" }, "format": "compact" },
+          { "elementId": "unusedClipsDisplay", "type": "text", "value": { "ref": "unusedClips" }, "format": "compact" }
+        ]
+      }
+    ]
+  },
+
+  "assets": {
+    "css": ["interface.css"],
+    "images": {
+      "title": "title.png"
+    }
+  }
+}

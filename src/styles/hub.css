@@ -1,0 +1,297 @@
+/**
+ * Game Hub Styles
+ */
+
+.game-hub {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Header */
+.hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.hub-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+/* Search */
+.hub-search {
+  flex: 0 0 300px;
+}
+
+.hub-search input {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.hub-search input:focus {
+  border-color: #007bff;
+}
+
+/* Empty State */
+.hub-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.hub-empty p {
+  margin: 10px 0;
+}
+
+.hub-empty-hint {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+/* Game Grid */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Game Card */
+.game-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.game-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.game-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.game-card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.game-card-version {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.game-card-description {
+  margin: 0 0 10px;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.game-card-author {
+  margin: 0 0 15px;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.game-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.game-card-save-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.2rem;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: #fff;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+/* Modal */
+.hub-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 15px 20px;
+  border-top: 1px solid #ddd;
+}
+
+/* Save Slots */
+.save-slot-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.save-slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.save-slot:hover {
+  background: #f9f9f9;
+}
+
+.save-slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.save-slot-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.save-slot-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.save-slot-playtime {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.save-slot-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.no-saves {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+}
